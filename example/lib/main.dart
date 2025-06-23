@@ -1,6 +1,5 @@
-import 'package:flutter/material.dart';
 import 'package:floating_overlay/floating_overlay.dart';
-
+import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
 void main() {
@@ -23,7 +22,7 @@ class App extends StatelessWidget {
         primarySwatch: Colors.blue,
       ),
       home: Provider<RouteObserver>(
-        // One way to make it avaliable through all your files and pages, but
+        // One way to make it available through all your files and pages, but
         // global variables and other means will work just fine as well.
         create: (_) => routeObserver,
         child: const HomePage(),
@@ -141,8 +140,8 @@ class CustomButton extends StatelessWidget {
     return Padding(
       padding: const EdgeInsets.all(8.0),
       child: ElevatedButton(
-        child: Text(title),
         onPressed: onPressed,
+        child: Text(title),
       ),
     );
   }
@@ -163,10 +162,10 @@ class AnimationPage extends StatefulWidget {
   const AnimationPage({Key? key}) : super(key: key);
 
   @override
-  _AnimationPageState createState() => _AnimationPageState();
+  AnimationPageState createState() => AnimationPageState();
 }
 
-class _AnimationPageState extends State<AnimationPage>
+class AnimationPageState extends State<AnimationPage>
     with SingleTickerProviderStateMixin {
   late final AnimationController animationController;
   late final FloatingOverlayController controller;
