@@ -86,11 +86,49 @@ class HomePage extends StatelessWidget {
                   );
                   controller.offset = rect.center;
                 },
-              ),
-              CustomButton(
+              ),              CustomButton(
                 title: 'Set Scale to 2.0',
                 onPressed: () {
                   controller.scale = 2.0;
+                },
+              ),              CustomButton(
+                title: '🚀 Throw Overlay to Center (Physics Demo)',
+                onPressed: () {
+                  final size = MediaQuery.of(context).size;
+                  final center = Rect.fromPoints(
+                    Offset.zero,
+                    Offset(size.width, size.height),
+                  ).center;
+                  // Use professional physics-based throwing
+                  controller.throwToPosition(center);
+                },
+              ),
+              CustomButton(
+                title: '📌 Toggle Snap to Corners',
+                onPressed: () {
+                  // Toggle snap behavior - disable if enabled, enable with default positions if disabled
+                  if (controller.snapPositions.isNotEmpty) {
+                    controller.setSnapToPositions(false);
+                  } else {
+                    controller.setSnapToPositions(true);
+                  }
+                },
+              ),
+              CustomButton(
+                title: '🎯 Set Custom Snap Positions',
+                onPressed: () {
+                  final size = MediaQuery.of(context).size;
+                  // Set custom snap positions (corners + center edges)
+                  controller.setCustomSnapPositions([
+                    // 4 corners
+                    const Offset(20, 20), // Top-left
+                    Offset(size.width - 120, 20), // Top-right
+                    const Offset(20, 200), // Bottom-left
+                    Offset(size.width - 120, 200), // Bottom-right
+                    // Center edges
+                    Offset(size.width / 2 - 50, 20), // Top-center
+                    Offset(size.width / 2 - 50, 200), // Bottom-center
+                  ]);
                 },
               ),
               CustomButton(

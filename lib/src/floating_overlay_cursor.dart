@@ -59,9 +59,8 @@ class _FloatingOverlayCursor {
         data.childRect.size,
       );
     }
-  }
-
-  void onEnd() {
+  }  void onEnd() {
+    // Use the existing onEnd method that was already added back
     _offset.onEnd();
   }
 }

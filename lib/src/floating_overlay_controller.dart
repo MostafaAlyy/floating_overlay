@@ -112,24 +112,29 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
   GlobalKey _key = GlobalKey();
   OverlayState? _overlay;
   OverlayEntry? _entry;
-  Widget? _child;
-
-  void _initState(
+  Widget? _child;  void _initState(
     BuildContext context,
     Widget floatingChild,
-    Rect limits,
-  ) {
+    Rect limits, {
+    TickerProvider? vsync,
+  }) {
     _logger.info('Started');
     _child ??= floatingChild;
     _offset.init(limits, MediaQuery.of(context).size);
     _scale.init(floatingLimits!);
+    
+    // Initialize physics system if ticker provider is available
+    if (vsync != null) {
+      _offset.initPhysics(vsync);
+    }
+    
     _overlay = Overlay.of(context);
     if (!isFloating) _createInvisibleChild(_startChildSize);
     _offset.setGlobal(_offset.state, state);
   }
-
   void _dispose() {
     hide(true);
+    _offset.disposePhysics();
     _offset.close();
     _scale.close();
     _overlay = null;
@@ -192,6 +197,23 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
   set scale(double scale) {
     _scale.onUpdate(scale, state);
   }
+  /// Professional throw animation to target position with physics
+  void throwToPosition(Offset targetPosition, {double? velocity}) {
+    _offset.throwToPosition(targetPosition, velocity: velocity);
+  }
+
+  /// Enable or disable snap-to-position behavior
+  void setSnapToPositions(bool enabled) {
+    _offset.setSnapToPositions(enabled);
+  }
+
+  /// Set custom snap positions (e.g., corners, edges, center)
+  void setCustomSnapPositions(List<Offset> positions) {
+    _offset.setCustomSnapPositions(positions);
+  }
+
+  /// Get current snap positions
+  List<Offset> get snapPositions => _offset.snapPositions;
 
   /// Returns the constrained `Rect` in which the widget can float.
   ///
@@ -291,21 +313,25 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
         ],
       ),
     );
-  }
-
-  Widget get gestureDetector {
+  }  Widget get gestureDetector {
     return GestureDetector(
       onScaleStart: (details) {
         _scale.onStart();
-        _offset.onStart(details.focalPoint);
+        _offset.onStartEnhanced(details.focalPoint);
       },
       onScaleUpdate: (details) {
-        _scale.onUpdate(details.scale, state);
-        final previousScale = _scale._previousScale;
-        _offset.onUpdate(details.focalPoint, state, previousScale);
-      },
-      onScaleEnd: (_) {
-        _offset.onEnd();
+        // For single finger drag (scale = 1.0), use enhanced movement
+        if (details.scale == 1.0) {
+          _offset.onUpdateEnhanced(details.focalPoint, state);
+        } else {
+          // For pinch/zoom gestures, use normal scaling
+          _scale.onUpdate(details.scale, state);
+          final previousScale = _scale._previousScale;
+          _offset.onUpdate(details.focalPoint, state, previousScale);
+        }
+      },      onScaleEnd: (details) {
+        // Use enhanced physics-based ending for throwing
+        _offset.onEndEnhanced(state);
       },
       child: _floatingChild,
     );
