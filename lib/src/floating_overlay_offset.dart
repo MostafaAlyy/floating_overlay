@@ -122,7 +122,10 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
 
   /// Standard update for scaling gestures
   void onUpdate(
-      Offset newOffset, FloatingOverlayData data, double previousScale) {
+    Offset newOffset,
+    FloatingOverlayData data,
+    double previousScale,
+  ) {
     final scaleOffset = _scaleOffset(data, previousScale);
     final delta = newOffset - _startOffset - scaleOffset;
     onUpdateDelta(delta, data.childRect.size);
@@ -201,8 +204,10 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
     if (_data == null) return;
 
     final now = DateTime.now();
-    final dt = math.min(now.difference(_lastUpdateTime).inMilliseconds / 1000.0,
-        1 / 30); // Cap at 30fps
+    final dt = math.min(
+      now.difference(_lastUpdateTime).inMilliseconds / 1000.0,
+      1 / 30,
+    ); // Cap at 30fps
     _lastUpdateTime = now;
 
     if (dt <= 0) return;
