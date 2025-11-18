@@ -86,12 +86,14 @@ class HomePage extends StatelessWidget {
                   );
                   controller.offset = rect.center;
                 },
-              ),              CustomButton(
+              ),
+              CustomButton(
                 title: 'Set Scale to 2.0',
                 onPressed: () {
                   controller.scale = 2.0;
                 },
-              ),              CustomButton(
+              ),
+              CustomButton(
                 title: '🚀 Throw Overlay to Center (Physics Demo)',
                 onPressed: () {
                   final size = MediaQuery.of(context).size;

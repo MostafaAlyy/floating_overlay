@@ -25,16 +25,17 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
   bool _snapToPositions = true; // Enable snap-to-position behavior
   DateTime _lastUpdateTime = DateTime.now();
   Ticker? _ticker;
-  
+
   // Snap positions (corners and center edges)
   List<Offset> _snapPositions = [];
-  
+
   // Professional physics constants - tuned for smooth, natural feel
   static const double _naturalFrequency = 12.0; // Spring system frequency
   static const double _dampingRatio = 0.9; // Critical damping for smoothness
   static const double _friction = 0.012; // Air resistance coefficient
   static const double _minVelocity = 0.8; // Threshold to stop animation
-  static const double _maxVelocity = 2500.0; // Maximum velocity cap  /// Initialize the floating limits based on constraints
+  static const double _maxVelocity =
+      2500.0; // Maximum velocity cap  /// Initialize the floating limits based on constraints
   void init(Rect limits, Size screenSize) {
     if (_constrained) {
       floatingLimits = Rect.fromLTRB(
@@ -53,26 +54,26 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
         bottomPadding,
       );
     }
-    
+
     // Initialize snap positions (4 corners)
     _updateSnapPositions(Size(100, 100)); // Default size, will be updated
   }
-  
+
   /// Update snap positions based on current child size
   void _updateSnapPositions(Size childSize) {
     if (floatingLimits == null) return;
-    
+
     final limits = floatingLimits!;
     _snapPositions = [
       // Top-left corner
       Offset(limits.left, limits.top),
-      
+
       // Top-right corner
       Offset(limits.right - childSize.width, limits.top),
-      
+
       // Bottom-left corner
       Offset(limits.left, limits.bottom - childSize.height),
-      
+
       // Bottom-right corner
       Offset(limits.right - childSize.width, limits.bottom - childSize.height),
     ];
@@ -93,18 +94,20 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
   /// Professional throw animation to target position
   void throwToPosition(Offset targetPosition, {double? velocity}) {
     if (floatingLimits == null || _data == null) return;
-    
+
     _targetPosition = _validValue(targetPosition, _data!.childRect.size);
     _isProgrammaticThrow = true;
-    
+
     // Calculate optimal velocity for smooth arrival
     final distance = (_targetPosition - state).distance;
     final optimalVelocity = velocity ?? math.min(distance * 2.5, _maxVelocity);
-    final direction = distance > 0 ? (_targetPosition - state) / distance : Offset.zero;
-    
+    final direction =
+        distance > 0 ? (_targetPosition - state) / distance : Offset.zero;
+
     _velocity = direction * optimalVelocity;
     _ticker?.start();
   }
+
   /// Enhanced gesture start with velocity reset
   void onStartEnhanced(Offset newOffset) {
     _startOffset = newOffset;
@@ -118,22 +121,25 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
   void onEnd() => _previousOffset = state;
 
   /// Standard update for scaling gestures
-  void onUpdate(Offset newOffset, FloatingOverlayData data, double previousScale) {
+  void onUpdate(
+      Offset newOffset, FloatingOverlayData data, double previousScale) {
     final scaleOffset = _scaleOffset(data, previousScale);
     final delta = newOffset - _startOffset - scaleOffset;
     onUpdateDelta(delta, data.childRect.size);
   }
+
   /// Enhanced smooth update with professional velocity tracking
   void onUpdateEnhanced(Offset newOffset, FloatingOverlayData data) {
     _data = data;
     _updateSnapPositions(data.childRect.size);
-    
+
     final now = DateTime.now();
     final deltaTime = now.difference(_lastUpdateTime).inMilliseconds / 1000.0;
-    
-    if (deltaTime > 0 && deltaTime < 0.1) { // Ignore large time gaps
+
+    if (deltaTime > 0 && deltaTime < 0.1) {
+      // Ignore large time gaps
       final positionDelta = newOffset - _startOffset;
-      
+
       // Professional velocity calculation with smoothing
       _velocity = _velocity * 0.7 + (positionDelta / deltaTime) * 0.3;
       _velocity = _velocity.clampMagnitude(0, _maxVelocity);
@@ -142,24 +148,28 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
     final delta = newOffset - _startOffset;
     onUpdateDelta(delta, data.childRect.size);
     _lastUpdateTime = now;
-  }  /// Professional gesture end with snap-to-position behavior only
+  }
+
+  /// Professional gesture end with snap-to-position behavior only
   void onEndEnhanced(FloatingOverlayData data) {
     _data = data;
     _previousOffset = state;
-    
+
     if (_snapToPositions) {
       // Always snap to the nearest corner
-      final nearestPosition = _findNearestSnapPosition() ?? _snapPositions.first;
+      final nearestPosition =
+          _findNearestSnapPosition() ?? _snapPositions.first;
       _animateToPosition(nearestPosition);
     }
   }
-    /// Find the nearest snap position (always returns a position)
+
+  /// Find the nearest snap position (always returns a position)
   Offset? _findNearestSnapPosition() {
     if (_snapPositions.isEmpty) return null;
-    
+
     double minDistance = double.infinity;
     Offset? nearestPosition;
-    
+
     for (final snapPos in _snapPositions) {
       final distance = (state - snapPos).distance;
       if (distance < minDistance) {
@@ -167,35 +177,39 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
         nearestPosition = snapPos;
       }
     }
-    
+
     return nearestPosition;
   }
-  
+
   /// Animate smoothly to target position
   void _animateToPosition(Offset targetPosition) {
     _targetPosition = targetPosition;
     _isProgrammaticThrow = true;
-    
+
     // Calculate optimal velocity for smooth arrival
     final distance = (_targetPosition - state).distance;
     final optimalVelocity = math.min(distance * 3.0, _maxVelocity);
-    final direction = distance > 0 ? (_targetPosition - state) / distance : Offset.zero;
-    
+    final direction =
+        distance > 0 ? (_targetPosition - state) / distance : Offset.zero;
+
     _velocity = direction * optimalVelocity;
     _ticker?.start();
-  }  /// Professional physics update system (snap-to-corner only)
+  }
+
+  /// Professional physics update system (snap-to-corner only)
   void _physicsUpdate(Duration elapsed) {
     if (_data == null) return;
 
     final now = DateTime.now();
-    final dt = math.min(now.difference(_lastUpdateTime).inMilliseconds / 1000.0, 1/30); // Cap at 30fps
+    final dt = math.min(now.difference(_lastUpdateTime).inMilliseconds / 1000.0,
+        1 / 30); // Cap at 30fps
     _lastUpdateTime = now;
 
     if (dt <= 0) return;
 
     final childSize = _data!.childRect.size;
     var newPosition = state;
-    
+
     // Only use spring-damper system for smooth snap animations
     if (_isProgrammaticThrow) {
       newPosition = _updateSpringDamper(dt, childSize);
@@ -203,31 +217,34 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
 
     // Apply position and check if animation should continue
     emit(_validValue(newPosition, childSize));
-    
-    if (_velocity.distance < _minVelocity && 
+
+    if (_velocity.distance < _minVelocity &&
         (!_isProgrammaticThrow || (state - _targetPosition).distance < 1.0)) {
       _stopAnimation();
     }
   }
+
   /// Spring-damper system for smooth programmatic animations (no bouncing)
   Offset _updateSpringDamper(double dt, Size childSize) {
     final displacement = _targetPosition - state;
     final springForce = displacement * _naturalFrequency * _naturalFrequency;
     final dampingForce = _velocity * (2 * _dampingRatio * _naturalFrequency);
-    
+
     final acceleration = springForce - dampingForce;
     _velocity += acceleration * dt;
-    
+
     // Apply friction
     _velocity *= math.pow(1 - _friction, dt).toDouble();
-    
+
     var newPosition = state + _velocity * dt;
-    
+
     // Clamp to boundaries without bouncing
     newPosition = _validValue(newPosition, childSize);
-    
+
     return newPosition;
-  }  /// Calculate scale offset for gesture handling
+  }
+
+  /// Calculate scale offset for gesture handling
   Offset _scaleOffset(FloatingOverlayData data, double previousScale) {
     final previousSize = data.copyWith(scale: previousScale).childRect.size;
     final currentSize = data.childRect.size;
@@ -247,7 +264,7 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
   /// Validate and clamp position within boundaries
   Offset _validValue(Offset offset, Size childSize) {
     if (floatingLimits == null) return offset;
-    
+
     final limits = floatingLimits!;
     final rect = offset & childSize;
 
@@ -264,6 +281,7 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
 
     return Offset(dx, dy);
   }
+
   /// Stop animation cleanly
   void _stopAnimation() {
     _isProgrammaticThrow = false;

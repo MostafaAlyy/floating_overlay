@@ -1,9 +1,10 @@
+import 'dart:math' as math;
+
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/scheduler.dart';
 import 'package:logging/logging.dart';
-import 'dart:math' as math;
 
 part 'cursor_border_side.dart';
 part 'cursor_resizing.dart';
@@ -53,14 +54,15 @@ class FloatingOverlay extends StatefulWidget {
   State<FloatingOverlay> createState() => _FloatingOverlayState();
 }
 
-class _FloatingOverlayState extends State<FloatingOverlay> 
+class _FloatingOverlayState extends State<FloatingOverlay>
     with RouteAware, TickerProviderStateMixin {
   static const empty = SizedBox.shrink();
 
   late final FloatingOverlayController controller;
   final key = GlobalKey();
   final floatingWidgetKey = GlobalKey();
-  bool floating = false;  void startController(BuildContext context, BoxConstraints constraints) {
+  bool floating = false;
+  void startController(BuildContext context, BoxConstraints constraints) {
     final offset = widgetOffset();
     final endOffsetValue = endOffset(offset, constraints.biggest);
     final limits = Rect.fromPoints(offset, endOffsetValue);
