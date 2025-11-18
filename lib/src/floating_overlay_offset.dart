@@ -1,6 +1,3 @@
-import 'package:flutter/scheduler.dart';
-import 'dart:math' as math;
-
 part of 'floating_overlay.dart';
 
 /// Professional physics-based offset controller with smooth animations
@@ -24,7 +21,6 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
   // Physics system state
   Offset _velocity = Offset.zero;
   Offset _targetPosition = Offset.zero;
-  bool _isAnimating = false;
   bool _isProgrammaticThrow = false;
   bool _snapToPositions = true; // Enable snap-to-position behavior
   DateTime _lastUpdateTime = DateTime.now();
@@ -37,12 +33,8 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
   static const double _naturalFrequency = 12.0; // Spring system frequency
   static const double _dampingRatio = 0.9; // Critical damping for smoothness
   static const double _friction = 0.012; // Air resistance coefficient
-  static const double _bounceRestitution = 0.35; // Energy retained on bounce
   static const double _minVelocity = 0.8; // Threshold to stop animation
-  static const double _throwMultiplier = 1.5; // Throw responsiveness
-  static const double _maxVelocity = 2500.0; // Maximum velocity cap
-  static const double _smoothingFactor = 0.15; // Interpolation smoothing
-  static const double _snapThreshold = 100.0; // Distance threshold for snapping  /// Initialize the floating limits based on constraints
+  static const double _maxVelocity = 2500.0; // Maximum velocity cap  /// Initialize the floating limits based on constraints
   void init(Rect limits, Size screenSize) {
     if (_constrained) {
       floatingLimits = Rect.fromLTRB(
@@ -111,7 +103,6 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
     final direction = distance > 0 ? (_targetPosition - state) / distance : Offset.zero;
     
     _velocity = direction * optimalVelocity;
-    _isAnimating = true;
     _ticker?.start();
   }
   /// Enhanced gesture start with velocity reset
@@ -119,7 +110,6 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
     _startOffset = newOffset;
     _velocity = Offset.zero;
     _lastUpdateTime = DateTime.now();
-    _isAnimating = false;
     _isProgrammaticThrow = false;
     _ticker?.stop();
   }
@@ -192,7 +182,6 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
     final direction = distance > 0 ? (_targetPosition - state) / distance : Offset.zero;
     
     _velocity = direction * optimalVelocity;
-    _isAnimating = true;
     _ticker?.start();
   }  /// Professional physics update system (snap-to-corner only)
   void _physicsUpdate(Duration elapsed) {
@@ -277,7 +266,6 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
   }
   /// Stop animation cleanly
   void _stopAnimation() {
-    _isAnimating = false;
     _isProgrammaticThrow = false;
     _velocity = Offset.zero;
     _ticker?.stop();

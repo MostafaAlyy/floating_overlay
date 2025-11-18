@@ -1,7 +1,9 @@
 import 'package:bloc/bloc.dart';
 import 'package:equatable/equatable.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/scheduler.dart';
 import 'package:logging/logging.dart';
+import 'dart:math' as math;
 
 part 'cursor_border_side.dart';
 part 'cursor_resizing.dart';

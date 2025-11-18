@@ -7,7 +7,7 @@ void main() {
 }
 
 class App extends StatelessWidget {
-  const App({Key? key}) : super(key: key);
+  const App({super.key});
   @override
   Widget build(BuildContext context) {
     // Create one of this and pass it to the FloatingOverlay, to be able to pop
@@ -32,7 +32,7 @@ class App extends StatelessWidget {
 }
 
 class HomePage extends StatelessWidget {
-  const HomePage({Key? key}) : super(key: key);
+  const HomePage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -165,10 +165,10 @@ class HomePage extends StatelessWidget {
 
 class CustomButton extends StatelessWidget {
   const CustomButton({
-    Key? key,
+    super.key,
     required this.onPressed,
     required this.title,
-  }) : super(key: key);
+  });
 
   final VoidCallback onPressed;
   final String title;
@@ -186,7 +186,7 @@ class CustomButton extends StatelessWidget {
 }
 
 class NewPage extends StatelessWidget {
-  const NewPage({Key? key}) : super(key: key);
+  const NewPage({super.key});
 
   @override
   Widget build(BuildContext context) {
@@ -197,7 +197,7 @@ class NewPage extends StatelessWidget {
 }
 
 class AnimationPage extends StatefulWidget {
-  const AnimationPage({Key? key}) : super(key: key);
+  const AnimationPage({super.key});
 
   @override
   AnimationPageState createState() => AnimationPageState();
