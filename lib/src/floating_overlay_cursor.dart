@@ -11,18 +11,9 @@ class _FloatingOverlayCursor {
   final _FloatingOverlayOffset _offset;
   Rect _startRect = Rect.zero;
 
-  /// Returns the actual main direction where the mouse is going.
+  /// Returns the primary axis delta for the given drag [side].
   ///
-  /// E.g. `_Side.left`? `Offset(X.Y, 0.0)`.
-  ///
-  /// E.g. `_Side.topLeft`?
-  /// It's going to return where the mouse has gone further.
-  ///
-  /// `final delta = newOffset - _offset._startOffset`
-  ///
-  /// `if (delta.dx.abs() > delta.dy.abs()) return Offset(X.Y, 0.0)`
-  ///
-  /// `else return Offset(0.0, X.Y)`
+  /// For diagonal sides the axis with the larger absolute movement wins.
   Offset mainDirectionDelta(Offset newOffset, _Side side) {
     final delta = newOffset - _offset._startOffset;
     if (side.diagonal) {
@@ -44,8 +35,8 @@ class _FloatingOverlayCursor {
     _startRect = data.childRect;
   }
 
-  /// Just as the gesture detector around the child, this tries to update the
-  /// scale and then the offset.
+  /// Updates scale and then adjusts the offset so the widget appears to
+  /// resize around its centre point.
   void onUpdate(Offset delta, FloatingOverlayData data) {
     final size = data.childSize;
     final previousScale = _scale.state;
@@ -59,8 +50,9 @@ class _FloatingOverlayCursor {
         data.childRect.size,
       );
     }
-  }  void onEnd() {
-    // Use the existing onEnd method that was already added back
+  }
+
+  void onEnd() {
     _offset.onEnd();
   }
 }

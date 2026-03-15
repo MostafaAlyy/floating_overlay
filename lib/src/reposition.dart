@@ -1,5 +1,7 @@
 part of 'floating_overlay.dart';
 
+/// Positions the floating child within the overlay [Stack] by listening to
+/// the offset controller's stream.
 class _Reposition extends StatelessWidget {
   const _Reposition({
     required this.child,

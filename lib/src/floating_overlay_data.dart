@@ -28,7 +28,11 @@ class FloatingOverlayData extends Equatable {
     Offset? position,
   }) {
     return FloatingOverlayData(
-      childSize: (childSize != Size.zero) && (childSize != null)
+      // Only update childSize when the incoming value is non-null AND
+      // non-zero. The original code had the null check in the wrong order
+      // (`childSize != Size.zero && childSize != null`), which would throw a
+      // Null check operator error if childSize was null.
+      childSize: (childSize != null && childSize != Size.zero)
           ? childSize
           : this.childSize,
       position: position ?? this.position,

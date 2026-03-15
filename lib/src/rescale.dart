@@ -1,5 +1,7 @@
 part of 'floating_overlay.dart';
 
+/// Scales the floating child widget by listening to the scale controller's
+/// stream.
 class _Rescale extends StatelessWidget {
   const _Rescale({
     required this.child,
@@ -18,8 +20,8 @@ class _Rescale extends StatelessWidget {
       stream: scaleController.stream,
       builder: (context, snapshot) {
         final scale = snapshot.data!;
-        Size? size;
-        if (data.childSize != Size.zero) size = data.childSize * scale;
+        final size =
+            data.childSize != Size.zero ? data.childSize * scale : null;
         return SizedBox.fromSize(
           size: size,
           child: child,

@@ -24,14 +24,14 @@ class FloatingOverlay extends StatefulWidget {
     /// The child underneath this widget inside the widget tree.
     this.child,
 
-    /// Used to controll the visibility state of the [floatingChild].
+    /// Used to control the visibility state of the [floatingChild].
     this.controller,
 
     /// Widget that will be floating around.
     this.floatingChild,
 
     /// When you push pages on top, the floating child will vanish and reappear
-    /// when you return if you give it an RouteObserver linked to the main
+    /// when you return if you give it a RouteObserver linked to the main
     /// MaterialApp.
     this.routeObserver,
   });
@@ -42,11 +42,11 @@ class FloatingOverlay extends StatefulWidget {
   /// Widget that will be floating around.
   final Widget? floatingChild;
 
-  /// Used to controll the visibility state of the [floatingChild].
+  /// Used to control the visibility state of the [floatingChild].
   final FloatingOverlayController? controller;
 
   /// When you push pages on top, the floating child will vanish and reappear
-  /// when you return if you give it an RouteObserver linked to the main
+  /// when you return if you give it a RouteObserver linked to the main
   /// MaterialApp.
   final RouteObserver? routeObserver;
 
@@ -62,7 +62,19 @@ class _FloatingOverlayState extends State<FloatingOverlay>
   final key = GlobalKey();
   final floatingWidgetKey = GlobalKey();
   bool floating = false;
+
+  /// Last seen constraints — used to skip redundant `startController` calls
+  /// that would otherwise fire on every rebuild (e.g. from an auto-scrolling
+  /// banner or any other ancestor setState).
+  BoxConstraints? _lastConstraints;
+
   void startController(BuildContext context, BoxConstraints constraints) {
+    // Only re-initialise when the layout constraints actually change.
+    // This prevents the spam of Started / Creating invisible entry / Entry
+    // removed logs that appeared every time an ancestor widget rebuilt.
+    if (_lastConstraints == constraints) return;
+    _lastConstraints = constraints;
+
     final offset = widgetOffset();
     final endOffsetValue = endOffset(offset, constraints.biggest);
     final limits = Rect.fromPoints(offset, endOffsetValue);
@@ -118,6 +130,10 @@ class _FloatingOverlayState extends State<FloatingOverlay>
   Widget build(BuildContext context) {
     return OrientationBuilder(
       builder: (context, orientation) {
+        // Clear the cached constraints whenever the orientation changes so
+        // startController re-fires and recalculates the floating limits for
+        // the new screen dimensions.
+        _lastConstraints = null;
         return LayoutBuilder(
           key: key,
           builder: (context, constraints) {

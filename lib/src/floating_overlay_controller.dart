@@ -109,45 +109,56 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
   final _FloatingOverlayOffset _offset;
   final _FloatingOverlayScale _scale;
   final double? _cursorArea;
-  GlobalKey _key = GlobalKey();
+
+  /// Stable key used to measure the floating child's rendered size.
+  ///
+  /// Previously this was re-assigned inside the [_floatingChild] getter on
+  /// every call, which caused Flutter to unmount/remount the child widget tree
+  /// whenever the key was read (e.g. during gesture detection). The key is now
+  /// a `final` field so it lives for the lifetime of the controller.
+  final GlobalKey _key = GlobalKey();
+
   OverlayState? _overlay;
   OverlayEntry? _entry;
-  Widget? _child;  void _initState(
+  Widget? _child;
+
+  void _initState(
     BuildContext context,
     Widget floatingChild,
     Rect limits, {
     TickerProvider? vsync,
   }) {
-    _logger.info('Started');
+    _logger.fine('Started');
     _child ??= floatingChild;
     _offset.init(limits, MediaQuery.of(context).size);
     _scale.init(floatingLimits!);
-    
-    // Initialize physics system if ticker provider is available
+
+    // Initialize physics system if a ticker provider is available.
     if (vsync != null) {
       _offset.initPhysics(vsync);
     }
-    
+
     _overlay = Overlay.of(context);
     if (!isFloating) _createInvisibleChild(_startChildSize);
     _offset.setGlobal(_offset.state, state);
   }
+
   void _dispose() {
     hide(true);
     _offset.disposePhysics();
     _offset.close();
     _scale.close();
     _overlay = null;
-    _logger.info('Disposed');
+    _logger.fine('Disposed');
   }
 
   void _createInvisibleChild(VoidCallback postFrameCallback) {
-    _logger.info('Creating invisible entry');
+    _logger.fine('Creating invisible entry');
     _entry = OverlayEntry(
       builder: (context) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
           postFrameCallback();
-          _logger.info('Destroying invisible entry');
+          _logger.fine('Destroying invisible entry');
           hide();
         });
         return Offstage(
@@ -165,7 +176,7 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
   }
 
   void _startChildSize() {
-    _logger.info('Strating child size');
+    _logger.fine('Starting child size measurement');
     emit(state.copyWith(childSize: _childSize));
   }
 
@@ -197,22 +208,24 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
   set scale(double scale) {
     _scale.onUpdate(scale, state);
   }
-  /// Professional throw animation to target position with physics
+
+  /// Programmatically throw the floating widget to a target position
+  /// using the physics-based spring animation.
   void throwToPosition(Offset targetPosition, {double? velocity}) {
     _offset.throwToPosition(targetPosition, velocity: velocity);
   }
 
-  /// Enable or disable snap-to-position behavior
+  /// Enable or disable snap-to-corner behavior on drag release.
   void setSnapToPositions(bool enabled) {
     _offset.setSnapToPositions(enabled);
   }
 
-  /// Set custom snap positions (e.g., corners, edges, center)
+  /// Override the default corner snap positions with custom ones.
   void setCustomSnapPositions(List<Offset> positions) {
     _offset.setCustomSnapPositions(positions);
   }
 
-  /// Get current snap positions
+  /// The current set of snap positions (read-only copy).
   List<Offset> get snapPositions => _offset.snapPositions;
 
   /// Returns the constrained `Rect` in which the widget can float.
@@ -220,9 +233,9 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
   /// This value is null until the [FloatingOverlay] is initiated.
   Rect? get floatingLimits => _offset.floatingLimits;
 
-  // Toggles the floating child's visibility.
+  /// Toggles the floating child's visibility.
   void toggle() {
-    _logger.info('Toggled');
+    _logger.fine('Toggled');
     if (isFloating) {
       hide();
     } else {
@@ -230,29 +243,32 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
     }
   }
 
-  // Hides the floating child.
+  /// Hides the floating child.
+  ///
+  /// Pass [dispose] = `true` when tearing down the overlay permanently
+  /// (e.g. from [_dispose]).
   void hide([bool dispose = false]) {
     _entry?.remove();
     if (dispose) _entry?.dispose();
     _entry = null;
-    _logger.info('Entry removed');
+    _logger.fine('Entry removed');
   }
 
-  // The floating child's visibility.
+  /// Whether the floating child is currently visible.
   bool get isFloating => _entry != null;
 
-  // Shows the floating child.
+  /// Shows the floating child.
   void show() {
-    _logger.info('Showing entry');
+    _logger.fine('Showing entry');
     _entry = OverlayEntry(
       builder: (context) {
-        return _entryProcesWidgets;
+        return _entryProcessWidgets;
       },
     );
     _overlay?.insert(_entry!);
   }
 
-  Widget get _entryProcesWidgets {
+  Widget get _entryProcessWidgets {
     return _Reposition(
       offsetController: _offset,
       child: Stack(
@@ -313,24 +329,29 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
         ],
       ),
     );
-  }  Widget get gestureDetector {
+  }
+
+  Widget get gestureDetector {
     return GestureDetector(
       onScaleStart: (details) {
         _scale.onStart();
         _offset.onStartEnhanced(details.focalPoint);
       },
       onScaleUpdate: (details) {
-        // For single finger drag (scale = 1.0), use enhanced movement
+        // Single-finger drag (scale == 1.0) → use enhanced movement with
+        // velocity tracking for the physics throw on release.
         if (details.scale == 1.0) {
           _offset.onUpdateEnhanced(details.focalPoint, state);
         } else {
-          // For pinch/zoom gestures, use normal scaling
+          // Pinch/zoom → update scale and adjust offset to keep widget centred
+          // under the focal point.
           _scale.onUpdate(details.scale, state);
           final previousScale = _scale._previousScale;
           _offset.onUpdate(details.focalPoint, state, previousScale);
         }
-      },      onScaleEnd: (details) {
-        // Use enhanced physics-based ending for throwing
+      },
+      onScaleEnd: (details) {
+        // Physics-based throw / snap-to-corner on release.
         _offset.onEndEnhanced(state);
       },
       child: _floatingChild,
@@ -338,7 +359,9 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
   }
 
   Widget get _floatingChild {
-    _key = GlobalKey();
+    // NOTE: _key is a stable `final` field on this controller. Do NOT create a
+    // new GlobalKey here — doing so would cause Flutter to unmount and remount
+    // the child widget tree on every gesture update, losing all widget state.
     return Container(
       key: _key,
       child: _child ?? const SizedBox.shrink(),
