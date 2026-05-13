@@ -33,10 +33,10 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
 
   // ─── Physics constants ────────────────────────────────────────────────────
   static const double _naturalFrequency = 12.0; // Spring frequency
-  static const double _dampingRatio = 0.9;      // Critical damping (no bounce)
-  static const double _friction = 0.012;        // Air-resistance coefficient
-  static const double _minVelocity = 0.8;       // Stop threshold (px/s)
-  static const double _maxVelocity = 2500.0;    // Velocity cap (px/s)
+  static const double _dampingRatio = 0.9; // Critical damping (no bounce)
+  static const double _friction = 0.012; // Air-resistance coefficient
+  static const double _minVelocity = 0.8; // Stop threshold (px/s)
+  static const double _maxVelocity = 2500.0; // Velocity cap (px/s)
 
   // ─── Initialisation ───────────────────────────────────────────────────────
 
@@ -125,6 +125,29 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
     _ticker?.start();
   }
 
+  /// Move the widget to the bottom-right snap position.
+  void snapToBottomRight(FloatingOverlayData data, {bool animated = true}) {
+    if (floatingLimits == null) return;
+
+    _data = data;
+    final childSize = data.childRect.size;
+    _updateSnapPositions(childSize);
+
+    final targetPosition = _validValue(
+      Offset(
+        floatingLimits!.right - childSize.width,
+        floatingLimits!.bottom - childSize.height,
+      ),
+      childSize,
+    );
+
+    if (animated) {
+      _animateToPosition(targetPosition);
+    } else {
+      setGlobal(targetPosition, data);
+    }
+  }
+
   // ─── Gesture callbacks ────────────────────────────────────────────────────
 
   /// Enhanced drag start — resets velocity so the previous throw does not
@@ -180,7 +203,8 @@ class _FloatingOverlayOffset extends Cubit<Offset> {
     _previousOffset = state;
 
     if (_snapToPositions && _snapPositions.isNotEmpty) {
-      final nearestPosition = _findNearestSnapPosition() ?? _snapPositions.first;
+      final nearestPosition =
+          _findNearestSnapPosition() ?? _snapPositions.first;
       _animateToPosition(nearestPosition);
     }
   }

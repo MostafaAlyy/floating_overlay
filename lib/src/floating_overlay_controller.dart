@@ -24,7 +24,11 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
 
     /// Cursor detection pixel area.
     double? cursorArea,
+    bool dragOnChild = true,
+    bool resizeEnabled = true,
   })  : _cursorArea = cursorArea,
+        _dragOnChild = dragOnChild,
+        _resizeEnabled = resizeEnabled,
         _offset = _FloatingOverlayOffset(
           start: start,
           padding: padding,
@@ -71,7 +75,11 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
 
     /// Cursor detection pixel area.
     double? cursorArea,
+    bool dragOnChild = true,
+    bool resizeEnabled = true,
   })  : _cursorArea = cursorArea,
+        _dragOnChild = dragOnChild,
+        _resizeEnabled = resizeEnabled,
         _offset = _FloatingOverlayOffset(
           start: start,
           padding: padding,
@@ -109,6 +117,8 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
   final _FloatingOverlayOffset _offset;
   final _FloatingOverlayScale _scale;
   final double? _cursorArea;
+  final bool _dragOnChild;
+  final bool _resizeEnabled;
 
   /// Stable key used to measure the floating child's rendered size.
   ///
@@ -229,6 +239,31 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
     _offset.throwToPosition(targetPosition, velocity: velocity);
   }
 
+  /// Move the floating child to the bottom-right corner.
+  ///
+  /// If the child has not been measured yet, this retries once on the next
+  /// frame after the overlay entry has been laid out.
+  void snapToBottomRight({bool animated = true}) {
+    final measuredSize = _tryReadChildSize();
+    if (measuredSize != null) {
+      emit(state.copyWith(childSize: measuredSize));
+    }
+
+    if (state.childSize != Size.zero) {
+      _offset.snapToBottomRight(state, animated: animated);
+      return;
+    }
+
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final childSize = _tryReadChildSize();
+      if (childSize == null) return;
+
+      final data = state.copyWith(childSize: childSize);
+      emit(data);
+      _offset.snapToBottomRight(data, animated: animated);
+    });
+  }
+
   /// Enable or disable snap-to-corner behavior on drag release.
   void setSnapToPositions(bool enabled) {
     _offset.setSnapToPositions(enabled);
@@ -299,60 +334,66 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
             scaleController: _scale,
             child: gestureDetector,
           ),
-          _CursorResizing(
-            side: _Side.left,
-            controller: _cursorController,
-            data: () => state,
-            area: _cursorArea,
-          ),
-          _CursorResizing(
-            side: _Side.top,
-            controller: _cursorController,
-            data: () => state,
-            area: _cursorArea,
-          ),
-          _CursorResizing(
-            side: _Side.right,
-            controller: _cursorController,
-            data: () => state,
-            area: _cursorArea,
-          ),
-          _CursorResizing(
-            side: _Side.bottom,
-            controller: _cursorController,
-            data: () => state,
-            area: _cursorArea,
-          ),
-          _CursorResizing(
-            side: _Side.topLeft,
-            controller: _cursorController,
-            data: () => state,
-            area: _cursorArea,
-          ),
-          _CursorResizing(
-            side: _Side.topRight,
-            controller: _cursorController,
-            data: () => state,
-            area: _cursorArea,
-          ),
-          _CursorResizing(
-            side: _Side.bottomLeft,
-            controller: _cursorController,
-            data: () => state,
-            area: _cursorArea,
-          ),
-          _CursorResizing(
-            side: _Side.bottomRight,
-            controller: _cursorController,
-            data: () => state,
-            area: _cursorArea,
-          ),
+          if (_resizeEnabled) ...[
+            _CursorResizing(
+              side: _Side.left,
+              controller: _cursorController,
+              data: () => state,
+              area: _cursorArea,
+            ),
+            _CursorResizing(
+              side: _Side.top,
+              controller: _cursorController,
+              data: () => state,
+              area: _cursorArea,
+            ),
+            _CursorResizing(
+              side: _Side.right,
+              controller: _cursorController,
+              data: () => state,
+              area: _cursorArea,
+            ),
+            _CursorResizing(
+              side: _Side.bottom,
+              controller: _cursorController,
+              data: () => state,
+              area: _cursorArea,
+            ),
+            _CursorResizing(
+              side: _Side.topLeft,
+              controller: _cursorController,
+              data: () => state,
+              area: _cursorArea,
+            ),
+            _CursorResizing(
+              side: _Side.topRight,
+              controller: _cursorController,
+              data: () => state,
+              area: _cursorArea,
+            ),
+            _CursorResizing(
+              side: _Side.bottomLeft,
+              controller: _cursorController,
+              data: () => state,
+              area: _cursorArea,
+            ),
+            _CursorResizing(
+              side: _Side.bottomRight,
+              controller: _cursorController,
+              data: () => state,
+              area: _cursorArea,
+            ),
+          ],
         ],
       ),
     );
   }
 
   Widget get gestureDetector {
+    if (!_dragOnChild) {
+      return _floatingChild;
+    }
+
     return GestureDetector(
       onScaleStart: (details) {
         _scale.onStart();
@@ -377,6 +418,19 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
       },
       child: _floatingChild,
     );
+  }
+
+  void startDrag(Offset globalPosition) {
+    _scale.onStart();
+    _offset.onStartEnhanced(globalPosition);
+  }
+
+  void updateDrag(Offset globalPosition) {
+    _offset.onUpdateEnhanced(globalPosition, state);
+  }
+
+  void endDrag() {
+    _offset.onEndEnhanced(state);
   }
 
   Widget get _floatingChild {
