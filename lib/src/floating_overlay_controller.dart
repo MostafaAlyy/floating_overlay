@@ -121,6 +121,7 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
   OverlayState? _overlay;
   OverlayEntry? _entry;
   Widget? _child;
+  bool _isMeasurementEntry = false;
 
   void _initState(
     BuildContext context,
@@ -154,9 +155,14 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
 
   void _createInvisibleChild(VoidCallback postFrameCallback) {
     _logger.fine('Creating invisible entry');
-    _entry = OverlayEntry(
+    _isMeasurementEntry = true;
+    late final OverlayEntry measurementEntry;
+    measurementEntry = OverlayEntry(
       builder: (context) {
         WidgetsBinding.instance.addPostFrameCallback((_) {
+          if (!identical(_entry, measurementEntry) || !_isMeasurementEntry) {
+            return;
+          }
           postFrameCallback();
           _logger.fine('Destroying invisible entry');
           hide();
@@ -172,16 +178,24 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
         );
       },
     );
-    _overlay?.insert(_entry!);
+    _entry = measurementEntry;
+    _overlay?.insert(measurementEntry);
   }
 
   void _startChildSize() {
     _logger.fine('Starting child size measurement');
-    emit(state.copyWith(childSize: _childSize));
+    final childSize = _tryReadChildSize();
+    if (childSize != null) {
+      emit(state.copyWith(childSize: childSize));
+    }
   }
 
-  Size get _childSize {
-    final box = _key.currentContext!.findRenderObject()! as RenderBox;
+  Size? _tryReadChildSize() {
+    final renderObject = _key.currentContext?.findRenderObject();
+    if (renderObject is! RenderBox || !renderObject.hasSize) {
+      return null;
+    }
+    final box = renderObject;
     return box.size;
   }
 
@@ -251,6 +265,7 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
     _entry?.remove();
     if (dispose) _entry?.dispose();
     _entry = null;
+    _isMeasurementEntry = false;
     _logger.fine('Entry removed');
   }
 
@@ -260,6 +275,12 @@ class FloatingOverlayController extends Cubit<FloatingOverlayData> {
   /// Shows the floating child.
   void show() {
     _logger.fine('Showing entry');
+    if (_entry != null && !_isMeasurementEntry) {
+      return;
+    }
+    if (_isMeasurementEntry) {
+      hide();
+    }
     _entry = OverlayEntry(
       builder: (context) {
         return _entryProcessWidgets;

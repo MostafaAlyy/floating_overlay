@@ -62,6 +62,7 @@ class _FloatingOverlayState extends State<FloatingOverlay>
   final key = GlobalKey();
   final floatingWidgetKey = GlobalKey();
   bool floating = false;
+  Orientation? _lastOrientation;
 
   /// Last seen constraints — used to skip redundant `startController` calls
   /// that would otherwise fire on every rebuild (e.g. from an auto-scrolling
@@ -130,10 +131,12 @@ class _FloatingOverlayState extends State<FloatingOverlay>
   Widget build(BuildContext context) {
     return OrientationBuilder(
       builder: (context, orientation) {
-        // Clear the cached constraints whenever the orientation changes so
-        // startController re-fires and recalculates the floating limits for
-        // the new screen dimensions.
-        _lastConstraints = null;
+        // Clear the cached constraints only when orientation actually changes
+        // so ordinary ancestor rebuilds do not recreate overlay entries.
+        if (_lastOrientation != orientation) {
+          _lastOrientation = orientation;
+          _lastConstraints = null;
+        }
         return LayoutBuilder(
           key: key,
           builder: (context, constraints) {
